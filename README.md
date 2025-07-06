@@ -5,7 +5,7 @@
 
 A sleek and interactive web application that recommends movies based on your selection, filters by genre, and displays top trending films. Powered by content-based recommendation using **TF-IDF** and **Cosine Similarity**, enriched with **TMDb API** for dynamic posters, ratings, and trailers.
 
-![App Screenshot]([Demo](IMG_20250706_165939_336.png))
+![App Screenshot](IMG_20250706_165939_336.png)
 
 ## 🚀 Features
 
