@@ -57,11 +57,33 @@ source venv/bin/activate  # Linux/Mac
 # Install dependencies
 pip install -r requirements.txt
 ```
+
+### Configuration
+1. Create `.env` file in project root:
+```env
+TMDB_API_KEY=your_api_key_here
+```
+
+### Run Application
+```bash
+streamlit run app.py
+```
+
+## 📂 Project Structure
+```
 movie-recommendation-app/
-├── app.py                  # Main application logic
-├── movies.pkl              # Movie dataset
-├── similarity.pkl          # Precomputed similarity matrix
-├── requirements.txt        # Python dependencies
-├── .env                    # API keys (gitignored)
-├── .gitignore              # Ignore environment files
-└── README.md               # Project documentation
+├── movies rcommendation system.ipynb # main project
+├── app.py # Main application logic
+├── movies.pkl # Movie dataset
+├── similarity.pkl # Precomputed similarity matrix
+├── requirements.txt # Python dependencies
+├── .env # API keys (gitignored)
+├── .gitignore # Ignore environment files
+└── README.md # Project documentation
+```
+
+## 📌 Notes
+- First run may take longer due to API data fetching
+- `.env` is included in `.gitignore` by default
+- Precomputed pickle files optimize performance
+
