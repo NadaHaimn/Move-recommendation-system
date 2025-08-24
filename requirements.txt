@@ -1,7 +1,10 @@
+pandas == 2.3.0
+numpy == 2.2.6
+seaborn == 0.13.2
+matplotlib == 3.10.5
 streamlit>=1.20.0
-pandas
-numpy
-scikit-learn
-requests
-Pillow
-python-dotenv
+fastapi == 0.0.8
+scikit-learn == 1.7.0
+requests == 2.32.3
+Pillow == 11.2.1
+python-dotenv ==  1.1.0
