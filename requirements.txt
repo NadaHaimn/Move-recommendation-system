@@ -3,7 +3,7 @@ numpy == 2.2.6
 seaborn == 0.13.2
 matplotlib == 3.10.5
 streamlit>=1.20.0
-fastapi == 0.0.8
+fastapi == 0.118.0
 scikit-learn == 1.7.0
 requests == 2.32.3
 Pillow == 11.2.1
