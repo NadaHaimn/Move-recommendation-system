@@ -10,8 +10,8 @@ load_dotenv()
 api_key = os.getenv("TMBD_API_Key")
 
 # تحميل البيانات
-movies = pickle.load(open('models\movies.pkl', 'rb'))
-similarity = pickle.load(open('models\similarity.pkl', 'rb'))
+movies = pickle.load(open("models/movies.pkl", "rb"))
+similarity = pickle.load(open("models/similarity.pkl", "rb"))
 
 
 # دالة جلب البوستر والتقييم
