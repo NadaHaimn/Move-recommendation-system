@@ -1,4 +1,4 @@
-name: Deploy Movie Recommendation System
+name: Docker Deployment to EC2
 
 on:
   push:
@@ -6,47 +6,54 @@ on:
       - main
 
 jobs:
-  deploy:
-    name: 🚀 Deploy to EC2
+  deploy-docker:
+    name: 🚀 Deploy Docker on EC2
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ checkout الكود
       - name: 🧾 Checkout Code
         uses: actions/checkout@v3
 
-      # 2️⃣ إعداد SSH
-      - name: 🔐 Set up SSH
+      - name: 🔐 Set up SSH for EC2 access
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-      # 3️⃣ رفع الكود للسيرفر
-      - name: 📤 Rsync Project to EC2
-        run: |
-          rsync -avz -e "ssh -o StrictHostKeyChecking=no" \
-            ./ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/Move-recommendation-system
-
-      # 4️⃣ تشغيل الأوامر على السيرفر
-      - name: 🛠️ Install Dependencies & Restart Services
+      - name: 🚀 Build & Run Docker on EC2
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
             set -e
 
-            echo "📂 Activating venv..."
-            VENV_PATH=/home/ubuntu/app/venv
-            PYTHON=$VENV_PATH/bin/python
+            # ادخل على مجلد المشروع أو اعمله clone لو مش موجود
+            PROJECT_DIR=/home/${USER}/movie-reco
+            if [ ! -d "$PROJECT_DIR" ]; then
+              git clone https://github.com/${{ github.repository }} $PROJECT_DIR
+            else
+              cd $PROJECT_DIR
+              git reset --hard
+              git pull origin main
+            fi
 
-            echo "📥 Installing requirements..."
-            $PYTHON -m pip install --upgrade pip
-            $PYTHON -m pip install -r /home/ubuntu/app/Move-recommendation-system/requirements.txt
+            cd $PROJECT_DIR
 
-            echo "🔄 Restarting services..."
-            sudo systemctl daemon-reload
-            sudo systemctl restart recommendation.service
-            sudo systemctl restart streamlit.service
+            echo "🛑 Stop and remove existing container if exists..."
+            if [ $(docker ps -a -q -f name=movie-reco) ]; then
+              docker stop movie-reco
+              docker rm movie-reco
+            fi
+
+            echo "🐳 Build Docker image..."
+            docker build -t movie-reco:latest .
+
+            echo "▶️ Run container..."
+            docker run -d --name movie-reco \
+              --network movie-network \
+              -p 8000:8000 \
+              -p 8501:8501 \
+              --memory=4g --cpus="2" \
+              movie-reco:latest
 
             echo "✅ Deployment completed!"
           EOF
