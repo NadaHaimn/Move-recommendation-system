@@ -26,7 +26,7 @@ jobs:
           ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
             set -e
 
-            # ادخل على مجلد المشروع أو اعمله clone لو مش موجود
+            # مجلد المشروع
             PROJECT_DIR=/home/${USER}/movie-reco
             if [ ! -d "$PROJECT_DIR" ]; then
               git clone https://github.com/${{ github.repository }} $PROJECT_DIR
@@ -39,13 +39,14 @@ jobs:
             cd $PROJECT_DIR
 
             echo "🛑 Stop and remove existing container if exists..."
-            if [ $(sudo docker ps -a -q -f name=movie-reco) ]; then
-              sudo docker stop movie-reco
-              sudo docker rm movie-reco
-            fi
+            sudo docker stop movie-reco || true
+            sudo docker rm movie-reco || true
 
             echo "🐳 Build Docker image..."
             sudo docker build -t movie-reco:latest .
+
+            # تأكد من وجود الشبكة
+            sudo docker network create movie-network || true
 
             echo "▶️ Run container..."
             sudo docker run -d --name movie-reco \
