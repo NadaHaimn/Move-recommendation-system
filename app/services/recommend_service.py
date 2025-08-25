@@ -9,7 +9,7 @@ api_key = os.getenv("TMBD_API_Key")
 
 # تحميل البيانات
 movies = pickle.load(open("models/movies.pkl", "rb"))
-similarity = pickle.load(open("Move-recommendation-system/models/similarity.pkl", "rb"))
+similarity = pickle.load(open("models/similarity.pkl", "rb"))
 
 def fetch_poster(movie_id):
     url = f'https://api.themoviedb.org/3/movie/{movie_id}?api_key={api_key}&language=en-US'
