@@ -1,0 +1,44 @@
+name: Deploy Recommendation System
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 🧾 Checkout code
+      uses: actions/checkout@v3
+
+    - name: 🔐 Set up SSH
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.EC2_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+    - name: 📤 Upload project to EC2
+      run: |
+        rsync -avz -e "ssh -o StrictHostKeyChecking=no" ./ ${{ secrets.EC2_USER}}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/Move-recommendation-system
+
+    - name: 🚀 Deploy on server
+      run: |
+        ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+          set -e
+          cd /home/${USER}/Move-recommendation-system
+
+          # Activate venv and install dependencies
+          source venv/bin/activate
+          pip install -r requirements.txt
+
+          # Restart FastAPI service
+          sudo systemctl restart recommendation.service
+
+          # Restart Streamlit service
+          sudo systemctl restart streamlit.service
+
+          echo "✅ Deployment completed for FastAPI & Streamlit!"
+        EOF
