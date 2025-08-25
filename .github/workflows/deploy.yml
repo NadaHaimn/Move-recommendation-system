@@ -39,16 +39,16 @@ jobs:
             cd $PROJECT_DIR
 
             echo "🛑 Stop and remove existing container if exists..."
-            if [ $(docker ps -a -q -f name=movie-reco) ]; then
-              docker stop movie-reco
-              docker rm movie-reco
+            if [ $(sudo docker ps -a -q -f name=movie-reco) ]; then
+              sudo docker stop movie-reco
+              sudo docker rm movie-reco
             fi
 
             echo "🐳 Build Docker image..."
-            docker build -t movie-reco:latest .
+            sudo docker build -t movie-reco:latest .
 
             echo "▶️ Run container..."
-            docker run -d --name movie-reco \
+            sudo docker run -d --name movie-reco \
               --network movie-network \
               -p 8000:8000 \
               -p 8501:8501 \
