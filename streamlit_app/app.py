@@ -111,7 +111,7 @@ movies_list = movies['title'].values
 st.markdown("<p style='font-size: 25px; margin-bottom:-8px;'>🎬 Choose a movie from the list:</p>", unsafe_allow_html=True)
 
 selected_movie = st.selectbox(
-    label="",
+    label="select a movie",
     options=movies_list,
     index=None,
     placeholder="Search or choose a movie first...",
