@@ -8,7 +8,7 @@ load_dotenv()
 api_key = os.getenv("TMBD_API_Key")
 
 # تحميل البيانات
-movies = pickle.load(open("Move-recommendation-system/models/movies.pkl", "rb"))
+movies = pickle.load(open("models/movies.pkl", "rb"))
 similarity = pickle.load(open("Move-recommendation-system/models/similarity.pkl", "rb"))
 
 def fetch_poster(movie_id):
