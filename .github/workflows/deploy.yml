@@ -1,4 +1,4 @@
-name: Deploy Recommendation System
+name: Deploy Movie Recommendation System
 
 on:
   push:
@@ -7,38 +7,46 @@ on:
 
 jobs:
   deploy:
+    name: 🚀 Deploy to EC2
     runs-on: ubuntu-latest
 
     steps:
-    - name: 🧾 Checkout code
-      uses: actions/checkout@v3
+      # 1️⃣ checkout الكود
+      - name: 🧾 Checkout Code
+        uses: actions/checkout@v3
 
-    - name: 🔐 Set up SSH
-      run: |
-        mkdir -p ~/.ssh
-        echo "${{ secrets.EC2_KEY }}" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-        ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+      # 2️⃣ إعداد SSH
+      - name: 🔐 Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-    - name: 📤 Upload project to EC2
-      run: |
-        rsync -avz -e "ssh -o StrictHostKeyChecking=no" ./ ${{ secrets.EC2_USER}}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/app/Move-recommendation-system
+      # 3️⃣ رفع الكود للسيرفر
+      - name: 📤 Rsync Project to EC2
+        run: |
+          rsync -avz -e "ssh -o StrictHostKeyChecking=no" \
+            ./ ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/Move-recommendation-system
 
-    - name: 🚀 Deploy on server
-      run: |
-        ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-          set -e
-          cd /home/${USER}/app
+      # 4️⃣ تشغيل الأوامر على السيرفر
+      - name: 🛠️ Install Dependencies & Restart Services
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            set -e
 
-          # Activate venv and install dependencies
-          source venv/bin/activate
-          pip install -r requirements.txt
+            echo "📂 Activating venv..."
+            VENV_PATH=/home/ubuntu/app/venv
+            PYTHON=$VENV_PATH/bin/python
 
-          # Restart FastAPI service
-          sudo systemctl restart recommendation.service
+            echo "📥 Installing requirements..."
+            $PYTHON -m pip install --upgrade pip
+            $PYTHON -m pip install -r /home/ubuntu/app/Move-recommendation-system/requirements.txt
 
-          # Restart Streamlit service
-          sudo systemctl restart streamlit.service
+            echo "🔄 Restarting services..."
+            sudo systemctl daemon-reload
+            sudo systemctl restart recommendation.service
+            sudo systemctl restart streamlit.service
 
-          echo "✅ Deployment completed for FastAPI & Streamlit!"
-        EOF
+            echo "✅ Deployment completed!"
+          EOF
