@@ -1,59 +1,56 @@
-name: Docker Deployment to EC2
+name: Deploy to EC2
 
 on:
   push:
     branches:
-      - main
+      - main   # أو أي branch بتنزلي منه
 
 jobs:
-  deploy-docker:
-    name: 🚀 Deploy Docker on EC2
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 🧾 Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: 🔐 Set up SSH for EC2 access
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+      - name: Copy files to EC2
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_KEY }}
+          source: "."
+          target: "/home/ubuntu/movie-reco"
 
-      - name: 🚀 Build & Run Docker on EC2
-        run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-            set -e
+      - name: Deploy on EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            cd /home/ubuntu/movie-reco
 
-            # ادخل على مجلد المشروع أو اعمله clone لو مش موجود
-            PROJECT_DIR=/home/${USER}/movie-reco
-            if [ ! -d "$PROJECT_DIR" ]; then
-              git clone https://github.com/${{ github.repository }} $PROJECT_DIR
-            else
-              cd $PROJECT_DIR
-              git reset --hard
-              git pull origin main
+            echo "✅ Updating repo..."
+            git pull || echo "⚠️ Git pull failed, continuing with old code."
+
+            echo "🛑 Stopping old container..."
+            sudo docker stop movie-reco || true
+            sudo docker rm movie-reco || true
+
+            echo "🐳 Building new image..."
+            if ! sudo docker build -t movie-reco:latest .; then
+              echo "❌ Build failed! Restarting old container..."
+              sudo docker start movie-reco || true
+              exit 1
             fi
 
-            cd $PROJECT_DIR
-
-            echo "🛑 Stop and remove existing container if exists..."
-            if [ $(docker ps -a -q -f name=movie-reco) ]; then
-              docker stop movie-reco
-              docker rm movie-reco
-            fi
-
-            echo "🐳 Build Docker image..."
-            docker build -t movie-reco:latest .
-
-            echo "▶️ Run container..."
-            docker run -d --name movie-reco \
+            echo "🚀 Running new container..."
+            sudo docker run -d --name movie-reco \
               --network movie-network \
               -p 8000:8000 \
               -p 8501:8501 \
               --memory=4g --cpus="2" \
               movie-reco:latest
 
-            echo "✅ Deployment completed!"
-          EOF
+            echo "✅ Deployment successful!"
