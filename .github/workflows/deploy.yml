@@ -22,13 +22,13 @@ jobs:
 
     - name: 📤 Upload project to EC2
       run: |
-        rsync -avz -e "ssh -o StrictHostKeyChecking=no" ./ ${{ secrets.EC2_USER}}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/Move-recommendation-system
+        rsync -avz -e "ssh -o StrictHostKeyChecking=no" ./ ${{ secrets.EC2_USER}}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/app/Move-recommendation-system
 
     - name: 🚀 Deploy on server
       run: |
         ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
           set -e
-          cd /home/${USER}/Move-recommendation-system
+          cd /home/${USER}/app/Move-recommendation-system
 
           # Activate venv and install dependencies
           source venv/bin/activate
