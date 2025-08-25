@@ -28,7 +28,7 @@ jobs:
       run: |
         ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
           set -e
-          cd /home/${USER}/app/Move-recommendation-system
+          cd /home/${USER}/app
 
           # Activate venv and install dependencies
           source venv/bin/activate
