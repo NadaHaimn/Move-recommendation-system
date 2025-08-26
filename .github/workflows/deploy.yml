@@ -9,20 +9,24 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # سحب الكود من الريبو
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # تسجيل الدخول على Docker Hub
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      # Build & Push Docker Image
       - name: Build and push Docker image
         run: |
           docker build -t ${{ secrets.DOCKER_USERNAME }}/movie-reco:latest .
           docker push ${{ secrets.DOCKER_USERNAME }}/movie-reco:latest
 
+      # Deploy على EC2
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -32,18 +36,15 @@ jobs:
           script: |
             set -e
 
-            # حذف أي container قديم
+            echo "🛑 Stopping and removing old container if exists..."
             if sudo docker ps -a --format '{{.Names}}' | grep -Eq "^movie-reco\$"; then
-              echo "🛑 Stopping old container..."
               sudo docker stop movie-reco || true
               sudo docker rm movie-reco || true
             fi
 
-            # عمل pull للـ image الجديدة
-            echo "🐳 Pulling latest image..."
+            echo "🐳 Pulling latest image from Docker Hub..."
             sudo docker pull ${{ secrets.DOCKER_USERNAME }}/movie-reco:latest
 
-            # تشغيل الـ container الجديد على نفس الـ network
             echo "🚀 Running new container on network movie-network..."
             sudo docker run -d \
               --name movie-reco \
