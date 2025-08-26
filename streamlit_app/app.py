@@ -85,7 +85,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # عنوان الصفحة
-st.markdown("<h1 style='text-align: center;'> Movie Recommendation System </h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center;'> Movie Recommendation System 🎬</h1>", unsafe_allow_html=True)
 st.markdown("")
 # خلفية بصورة مع طبقة شفافة حسب الوضع الليلي أو النهاري
 st.markdown("""
