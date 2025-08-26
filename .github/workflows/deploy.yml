@@ -1,56 +1,40 @@
-name: Deploy to EC2
+name: CI/CD Deploy
 
 on:
   push:
-    branches:
-      - main   # أو أي branch بتنزلي منه
+    branches: ["main"]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
+      # سحب الكود من الريبو
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Copy files to EC2
-        uses: appleboy/scp-action@master
+      # لوج إن على Docker Hub
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ubuntu
-          key: ${{ secrets.EC2_KEY }}
-          source: "."
-          target: "/home/ubuntu/movie-reco"
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Deploy on EC2
-        uses: appleboy/ssh-action@master
+      # Build & Push Docker Image
+      - name: Build and push Docker image
+        run: |
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/movie-reco:latest .
+          docker push ${{ secrets.DOCKER_USERNAME }}/movie-reco:latest
+
+      # SSH على السيرفر و Restart للـ Container
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_KEY }}
           script: |
-            cd /home/ubuntu/movie-reco
-
-            echo "✅ Updating repo..."
-            git pull || echo "⚠️ Git pull failed, continuing with old code."
-
-            echo "🛑 Stopping old container..."
-            sudo docker stop movie-reco || true
-            sudo docker rm movie-reco || true
-
-            echo "🐳 Building new image..."
-            if ! sudo docker build -t movie-reco:latest .; then
-              echo "❌ Build failed! Restarting old container..."
-              sudo docker start movie-reco || true
-              exit 1
-            fi
-
-            echo "🚀 Running new container..."
-            sudo docker run -d --name movie-reco \
-              --network movie-network \
-              -p 8000:8000 \
-              -p 8501:8501 \
-              --memory=4g --cpus="2" \
-              movie-reco:latest
-
-            echo "✅ Deployment successful!"
+            docker pull ${{ secrets.DOCKER_USERNAME }}/movie-reco:latest
+            docker stop movie-reco || true
+            docker rm movie-reco || true
+            docker run -d --name movie-reco -p 8000:8000 -p 8501:8501 ${{ secrets.DOCKER_USERNAME }}/movie-reco:latest
